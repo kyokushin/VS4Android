@@ -158,6 +158,15 @@ public class SearchResultFragment extends Fragment {
 			
 			@Override
 			public void run() {
+				if(url == null){//TODO:nullがなぜ発生するのか調査が必要
+					handle.post(new Runnable() {
+						@Override
+						public void run() {
+							imageViews[index].setImageBitmap(null);
+						}
+					});
+					return;
+				}
 				InputStream istr = null;
 				ByteArrayOutputStream ostr = null;
 				try {
