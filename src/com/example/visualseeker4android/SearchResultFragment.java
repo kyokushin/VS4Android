@@ -20,6 +20,7 @@ import com.example.visualseeker4android.xml.XMLParser;
 import com.example.visualseeker4android.xml.XMLRequest;
 
 import android.app.Fragment;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
@@ -29,9 +30,14 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.Animation.AnimationListener;
+import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 
 public class SearchResultFragment extends Fragment {
@@ -49,9 +55,15 @@ public class SearchResultFragment extends Fragment {
 		R.id.imageView8,
 		R.id.imageView9
 	};
+	Bitmap[] bitmaps = new Bitmap[imageview_id.length];
 	ImageView[] imageViews = null;
 	String[] ids = null;
 	AsyncXMLParser asyncParser = null;
+	
+	Animation[] anim_open_result = null;
+	Animation[] anim_close_result = null;
+	
+	Animation anim_on_touch_down = null;
 
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -66,6 +78,19 @@ public class SearchResultFragment extends Fragment {
 			imageView.setOnClickListener(new OnClickItemListener(ids,i));
 			imageViews[i] = imageView;
 		}
+		
+		//アニメーションの読み込み
+		anim_open_result = new Animation[imageview_id.length];
+		for( int i=0; i<anim_open_result.length; i++){
+			anim_open_result[i] = AnimationUtils.loadAnimation(getActivity(), R.anim.open_search_result);
+			anim_open_result[i].setAnimationListener(new OpenAnimationListener(i));
+		}
+		anim_close_result = new Animation[imageview_id.length];
+		for( int i=0; i<anim_close_result.length; i++){
+			anim_close_result[i] = AnimationUtils.loadAnimation(getActivity(), R.anim.close_search_result);
+			anim_close_result[i].setAnimationListener(new CloseAnimationListener(i));
+		}
+		anim_on_touch_down = AnimationUtils.loadAnimation(getActivity(), R.anim.on_touch_down);
 
 		asyncParser = new AsyncXMLParser();
 		asyncParser.setOnReturnResultListener(new UiUpdateListener());
@@ -104,7 +129,37 @@ public class SearchResultFragment extends Fragment {
 		return super.onOptionsItemSelected(item);
 	}
 
-
+	class OpenAnimationListener implements AnimationListener {
+		private static final String TAG = "OpenAnimation";
+		int index;
+		OpenAnimationListener(int index){
+			this.index = index;
+		}
+		@Override
+		public void onAnimationStart(Animation arg0) {
+			imageViews[index].setVisibility(View.VISIBLE);
+			Log.d(TAG, "animation start and view is visible:" + index);
+		}
+		@Override
+		public void onAnimationRepeat(Animation arg0) { }
+		@Override
+		public void onAnimationEnd(Animation arg0) { }
+	}
+	class CloseAnimationListener implements AnimationListener {
+		int index;
+		CloseAnimationListener(int index){
+			this.index = index;
+		}
+		@Override
+		public void onAnimationStart(Animation arg0) {
+		}
+		@Override
+		public void onAnimationRepeat(Animation arg0) { }
+		@Override
+		public void onAnimationEnd(Animation arg0) {
+			imageViews[index].setVisibility(View.INVISIBLE);
+		}
+	}
 
 	private class OnClickItemListener implements OnClickListener {
 		private String[] ids = null;
@@ -116,12 +171,19 @@ public class SearchResultFragment extends Fragment {
 
 		@Override
 		public void onClick(View v) {
-			asyncParser.execute(XMLParser.SEARCH_URL_BASE+ids[index]);
+			for( int i=0; i<imageview_id.length; i++){
+				if( i == index) continue;
+				imageViews[i].startAnimation(anim_close_result[i]);
+			}
+			anim_on_touch_down.setAnimationListener(new CloseAnimationListener(index));
+			v.startAnimation(anim_on_touch_down);
+			String query_url = XMLParser.SEARCH_URL_BASE+ids[index];
+			asyncParser.execute(query_url);
 
+			
 			Log.d("click","item clicked. url:" + ids[index]);
 		}
 	}
-
 
 	private class UiUpdateListener implements OnReturnResultListener {
 		ExecutorService service = Executors.newFixedThreadPool(2);
@@ -137,10 +199,12 @@ public class SearchResultFragment extends Fragment {
 
 				String url = result.get(i).getUrl();
 				service.execute(new RequestImageURL(url, i) );
+				//TODO:すべてのスレッドが終了したらViewを更新するスレッドを作る
 			}
 		}
 		
 		private class RequestImageURL implements Runnable{
+			final static String TAG = "RequestImageURL";
 			Handler handle;
 			URL url= null;
 			int index = -1;
@@ -182,8 +246,11 @@ public class SearchResultFragment extends Fragment {
 					handle.post(new Runnable() {
 						@Override
 						public void run() {
-							Bitmap bitmap = BitmapFactory.decodeByteArray(imageByte, 0, imageByte.length);
-							imageViews[index].setImageBitmap(bitmap);
+							//imageViews[index].setImageBitmap(null);
+							if(bitmaps[index] != null) bitmaps[index].recycle();
+							bitmaps[index] = BitmapFactory.decodeByteArray(imageByte, 0, imageByte.length);
+							imageViews[index].setImageBitmap(bitmaps[index]);
+							imageViews[index].startAnimation(anim_open_result[index]);
 						}
 					});
 					
@@ -191,6 +258,16 @@ public class SearchResultFragment extends Fragment {
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
+					Log.d(TAG, "failed to open URL" + index);
+					handle.post(new Runnable() {
+						@Override
+						public void run() {
+							imageViews[index].setImageBitmap(null);
+							if(bitmaps[index] != null) bitmaps[index].recycle();
+							bitmaps[index] = null;
+							imageViews[index].setVisibility(View.INVISIBLE);
+						}
+					});
 				}
 				finally{
 					try {
