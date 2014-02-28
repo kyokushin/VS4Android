@@ -1,4 +1,4 @@
-package com.example.visualseeker4android;
+package com.example.visualseeker4android.imagesearch;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -6,6 +6,9 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.example.visualseeker4android.R;
+import com.example.visualseeker4android.R.id;
+import com.example.visualseeker4android.R.layout;
 import com.example.visualseeker4android.xml.VisualSeekerResult;
 import com.example.visualseeker4android.xml.XMLParser;
 import com.example.visualseeker4android.xml.XMLRequest;

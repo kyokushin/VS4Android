@@ -1,4 +1,4 @@
-package com.example.visualseeker4android;
+package com.example.visualseeker4android.imagesearch;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -13,6 +13,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.example.visualseeker4android.R;
 import com.example.visualseeker4android.xml.AsyncXMLParser;
 import com.example.visualseeker4android.xml.AsyncXMLParser.OnReturnResultListener;
 import com.example.visualseeker4android.xml.VisualSeekerResult;
@@ -65,6 +66,8 @@ public class SearchResultFragment extends Fragment {
 	
 	Animation anim_on_touch_down = null;
 
+    List<VisualSeekerResult> result_list = null;
+
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
@@ -75,7 +78,8 @@ public class SearchResultFragment extends Fragment {
 		ids = new String[imageview_id.length];
 		for( int i=0; i<imageview_id.length; i++){
 			ImageView imageView = (ImageView)view.findViewById(imageview_id[i]);
-			imageView.setOnClickListener(new OnClickItemListener(ids,i));
+			imageView.setOnClickListener(new OnClickItemListener(i));
+            imageView.setOnLongClickListener(new OnLongClickItemListener(i));
 			imageViews[i] = imageView;
 		}
 		
@@ -162,28 +166,47 @@ public class SearchResultFragment extends Fragment {
 	}
 
 	private class OnClickItemListener implements OnClickListener {
-		private String[] ids = null;
 		int index = -1;
-		public OnClickItemListener(String[] ids , int index){
-			this.ids = ids;
+		public OnClickItemListener(int index){
 			this.index = index;
 		}
 
 		@Override
 		public void onClick(View v) {
+			searchAndUpdateUi(index);
+		}
+	}
+	
+	public void searchAndUpdateUi( int index ){
 			for( int i=0; i<imageview_id.length; i++){
 				if( i == index) continue;
 				imageViews[i].startAnimation(anim_close_result[i]);
 			}
 			anim_on_touch_down.setAnimationListener(new CloseAnimationListener(index));
-			v.startAnimation(anim_on_touch_down);
+			imageViews[index].startAnimation(anim_on_touch_down);
 			String query_url = XMLParser.SEARCH_URL_BASE+ids[index];
 			asyncParser.execute(query_url);
-
 			
 			Log.d("click","item clicked. url:" + ids[index]);
-		}
 	}
+
+    private class OnLongClickItemListener implements View.OnLongClickListener {
+
+        private int index = -1;
+        public OnLongClickItemListener( int index ){
+            this.index = index;
+        }
+
+        @Override
+        public boolean onLongClick(View view) {
+
+            ResultItemDialogFragment dialogFragment = new ResultItemDialogFragment();
+            dialogFragment.setResult(index, result_list.get(index), bitmaps[index]);
+            dialogFragment.show(getFragmentManager(),"dialog");
+
+            return true;
+        }
+    }
 
 	private class UiUpdateListener implements OnReturnResultListener {
 		ExecutorService service = Executors.newFixedThreadPool(2);
@@ -192,6 +215,9 @@ public class SearchResultFragment extends Fragment {
 		
 		@Override
 		public void onReturnResult(List<VisualSeekerResult> result) {
+
+            result_list = result;
+
 			Log.d("onReturn","return result");
 			for( int i=0; i<result.size(); i++){
 				String id = result.get(i).getId();
@@ -244,19 +270,21 @@ public class SearchResultFragment extends Fragment {
 					imageByte = ostr.toByteArray();
 					
 					handle.post(new Runnable() {
+
 						@Override
 						public void run() {
-							//imageViews[index].setImageBitmap(null);
-							if(bitmaps[index] != null) bitmaps[index].recycle();
-							bitmaps[index] = BitmapFactory.decodeByteArray(imageByte, 0, imageByte.length);
-							imageViews[index].setImageBitmap(bitmaps[index]);
+                            Bitmap bitmap = bitmaps[index];
+							if( bitmap != null) bitmap.recycle();
+                            bitmap = BitmapFactory.decodeByteArray(imageByte, 0, imageByte.length);
+							bitmaps[index] = bitmap;
+							imageViews[index].setImageBitmap(bitmap);
 							imageViews[index].startAnimation(anim_open_result[index]);
 						}
 					});
 					
 					
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
+					// エラー時に表示しない処理
 					e.printStackTrace();
 					Log.d(TAG, "failed to open URL" + index);
 					handle.post(new Runnable() {

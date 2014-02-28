@@ -1,4 +1,9 @@
-package com.example.visualseeker4android;
+package com.example.visualseeker4android.imagesearch;
+
+import com.example.visualseeker4android.R;
+import com.example.visualseeker4android.R.id;
+import com.example.visualseeker4android.R.layout;
+import com.example.visualseeker4android.R.menu;
 
 import android.os.Bundle;
 import android.app.Activity;
