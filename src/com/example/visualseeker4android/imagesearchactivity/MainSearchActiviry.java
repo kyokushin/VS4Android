@@ -1,4 +1,4 @@
-package com.example.visualseeker4android.imagesearch;
+package com.example.visualseeker4android.imagesearchactivity;
 
 import com.example.visualseeker4android.R;
 import com.example.visualseeker4android.R.id;
@@ -11,7 +11,7 @@ import android.app.Fragment;
 import android.view.Menu;
 import android.view.MenuItem;
 
-public class DefaultSearch extends Activity {
+public class MainSearchActiviry extends Activity {
 	
 	
 	Fragment searchResult = null;

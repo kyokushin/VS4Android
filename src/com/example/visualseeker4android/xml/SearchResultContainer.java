@@ -1,12 +1,12 @@
 package com.example.visualseeker4android.xml;
 
-public class VisualSeekerResult {
+public class SearchResultContainer {
 	String title;
 	String id;
 	String tag;
 	String url;
 	
-	public VisualSeekerResult(String title, String id, String tag, String url){
+	public SearchResultContainer(String title, String id, String tag, String url){
 		this.title = title;
 		this.id = id;
 		this.tag = tag;

@@ -3,10 +3,10 @@
     android:id="@+id/FrameLayout1"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".DefaultSearch" >
+    tools:context=".MainSearchActiviry" >
 
     <fragment
-        android:name="com.example.visualseeker4android.imagesearch.SearchResultFragment"
+        android:name="com.example.visualseeker4android.imagesearchactivity.SearchResultFragment"
         android:id="@+id/search_result"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />

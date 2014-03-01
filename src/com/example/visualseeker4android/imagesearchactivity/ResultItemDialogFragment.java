@@ -1,4 +1,6 @@
-package com.example.visualseeker4android.imagesearch;
+package com.example.visualseeker4android.imagesearchactivity;
+
+import java.io.File;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -7,14 +9,15 @@ import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.os.Environment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.example.visualseeker4android.R;
-import com.example.visualseeker4android.xml.VisualSeekerResult;
+import com.example.visualseeker4android.utils.asynctask.SaveImage;
+import com.example.visualseeker4android.xml.SearchResultContainer;
 
 /**
  * Created by u-ta on 14/02/28.
@@ -23,12 +26,15 @@ public class ResultItemDialogFragment extends DialogFragment {
 
 	int index;
 	Bitmap bitmap;
-	VisualSeekerResult result;
+	SearchResultContainer result;
+
+	private static File save_dir = Environment
+			.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
 
 	public ResultItemDialogFragment() {
 	}
 
-	public void setResult(int index, VisualSeekerResult result, Bitmap bitmap) {
+	public void setResult(int index, SearchResultContainer result, Bitmap bitmap) {
 		this.bitmap = bitmap;
 		this.result = result;
 		this.index = index;
@@ -67,8 +73,12 @@ public class ResultItemDialogFragment extends DialogFragment {
 		builder.setPositiveButton("保存", new OnClickListener() {
 			@Override
 			public void onClick(DialogInterface dialog, int which) {
-				Toast.makeText(getActivity(), "まだ実装されてません", Toast.LENGTH_LONG)
-						.show();
+
+				String url = result.getUrl();
+				String filename = url.substring(url.lastIndexOf('/') + 1);
+				File save_file = new File(save_dir, filename);
+
+				SaveImage.saveImage(bitmap, save_file, getActivity());
 			}
 		});
 

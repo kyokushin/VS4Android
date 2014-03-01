@@ -1,27 +1,15 @@
-package com.example.visualseeker4android.imagesearch;
+package com.example.visualseeker4android.imagesearchactivity;
 
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import com.example.visualseeker4android.R;
-import com.example.visualseeker4android.xml.AsyncXMLParser;
-import com.example.visualseeker4android.xml.AsyncXMLParser.OnReturnResultListener;
-import com.example.visualseeker4android.xml.VisualSeekerResult;
-import com.example.visualseeker4android.xml.XMLParser;
-import com.example.visualseeker4android.xml.XMLRequest;
-
 import android.app.Fragment;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
@@ -31,15 +19,18 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.Animation.AnimationListener;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
+
+import com.example.visualseeker4android.R;
+import com.example.visualseeker4android.utils.AsyncTaskRunner;
+import com.example.visualseeker4android.xml.SearchResultContainer;
+import com.example.visualseeker4android.xml.SearchResultXMLParser;
 
 public class SearchResultFragment extends Fragment {
 	
@@ -59,14 +50,13 @@ public class SearchResultFragment extends Fragment {
 	Bitmap[] bitmaps = new Bitmap[imageview_id.length];
 	ImageView[] imageViews = null;
 	String[] ids = null;
-	AsyncXMLParser asyncParser = null;
 	
 	Animation[] anim_open_result = null;
 	Animation[] anim_close_result = null;
 	
 	Animation anim_on_touch_down = null;
 
-    List<VisualSeekerResult> result_list = null;
+    List<SearchResultContainer> result_list = null;
 
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -95,25 +85,11 @@ public class SearchResultFragment extends Fragment {
 			anim_close_result[i].setAnimationListener(new CloseAnimationListener(i));
 		}
 		anim_on_touch_down = AnimationUtils.loadAnimation(getActivity(), R.anim.on_touch_down);
-
-		asyncParser = new AsyncXMLParser();
-		asyncParser.setOnReturnResultListener(new UiUpdateListener());
-		asyncParser.executeInitial();
+		
+		AsyncTaskRunner.execute(new XMLParseTask(), new UiUpdateListener());
 		
 		return view;
 	}
-
-	@Override
-	public void onActivityCreated(Bundle savedInstanceState) {
-		super.onActivityCreated(savedInstanceState);
-	}
-
-	@Override
-	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-
-	}
-	
 	
 	@Override
 	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
@@ -125,10 +101,10 @@ public class SearchResultFragment extends Fragment {
 	public boolean onOptionsItemSelected(MenuItem item) {
 		
 		if(item.getItemId() == R.id.action_reset){
-			asyncParser.executeInitial();
+			//asyncParser.executeInitial();
+			AsyncTaskRunner.execute(new XMLParseTask(), new UiUpdateListener());
 			return true;
 		}
-		
 		
 		return super.onOptionsItemSelected(item);
 	}
@@ -184,8 +160,9 @@ public class SearchResultFragment extends Fragment {
 			}
 			anim_on_touch_down.setAnimationListener(new CloseAnimationListener(index));
 			imageViews[index].startAnimation(anim_on_touch_down);
-			String query_url = XMLParser.SEARCH_URL_BASE+ids[index];
-			asyncParser.execute(query_url);
+			String query_url = SearchResultXMLParser.SEARCH_URL_BASE+ids[index];
+			//asyncParser.execute(query_url);
+			AsyncTaskRunner.execute(new XMLParseTask(query_url), new UiUpdateListener());
 			
 			Log.d("click","item clicked. url:" + ids[index]);
 	}
@@ -207,25 +184,41 @@ public class SearchResultFragment extends Fragment {
             return true;
         }
     }
+    private static class XMLParseTask implements AsyncTaskRunner.Task {
+    	static SearchResultXMLParser parser = null;
+    	static List<SearchResultContainer> listResult = null;
+    	String url = null;
 
-	private class UiUpdateListener implements OnReturnResultListener {
+    	public XMLParseTask() {
+    		url = SearchResultXMLParser.INITIAL_URL;
+    	}
+
+    	public XMLParseTask( String url ){
+    		this.url = url;
+    	}
+
+    	@Override
+    	public Object run() {
+    		return SearchResultXMLParser.getRequest(url);
+
+    	}
+
+    }
+	private class UiUpdateListener implements AsyncTaskRunner.OnFinishUiUpdateListener{
 		ExecutorService service = Executors.newFixedThreadPool(2);
-		public UiUpdateListener() {
-		}
 		
 		@Override
-		public void onReturnResult(List<VisualSeekerResult> result) {
+		public void onFinish(Object result) {
 
-            result_list = result;
+            result_list = (List<SearchResultContainer>)result;
 
 			Log.d("onReturn","return result");
-			for( int i=0; i<result.size(); i++){
-				String id = result.get(i).getId();
+			for( int i=0; i<result_list.size(); i++){
+				String id = result_list.get(i).getId();
 				ids[i] = id;
 
-				String url = result.get(i).getUrl();
+				String url = result_list.get(i).getUrl();
 				service.execute(new RequestImageURL(url, i) );
-				//TODO:すべてのスレッドが終了したらViewを更新するスレッドを作る
 			}
 		}
 		
@@ -248,7 +241,7 @@ public class SearchResultFragment extends Fragment {
 			
 			@Override
 			public void run() {
-				if(url == null){//TODO:nullがなぜ発生するのか調査が必要
+				if(url == null){
 					handle.post(new Runnable() {
 						@Override
 						public void run() {
@@ -302,7 +295,6 @@ public class SearchResultFragment extends Fragment {
 						if(istr != null)istr.close();
 						if(ostr != null)ostr.close();
 					} catch (IOException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				}

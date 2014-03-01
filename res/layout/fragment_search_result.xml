@@ -3,7 +3,7 @@
     android:id="@+id/FrameLayout1"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".DefaultSearch" >
+    tools:context=".MainSearchActiviry" >
 
     <ImageView
         android:id="@+id/backgroundImageView"
