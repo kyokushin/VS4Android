@@ -9,11 +9,11 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import android.app.Fragment;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -33,6 +33,8 @@ import com.example.visualseeker4android.xml.SearchResultContainer;
 import com.example.visualseeker4android.xml.SearchResultXMLParser;
 
 public class SearchResultFragment extends Fragment {
+	
+	public static final String FRAGMENT_TAG = "SearchResult";
 	
 	ExecutorService service = Executors.newSingleThreadExecutor();
 	

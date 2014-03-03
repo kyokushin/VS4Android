@@ -7,8 +7,8 @@ import com.example.visualseeker4android.R;
 import com.example.visualseeker4android.utils.AsyncTaskRunner;
 import com.example.visualseeker4android.xml.KeyWardRankingXMLParser;
 
-import android.app.Fragment;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,6 +16,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 public class QueryRankingFragment extends Fragment {
+	
+	public static final String FRAGMENT_TAG = "QueryRanking";
 
 	List<TextView> itemViews = new ArrayList<TextView>();
 	LinearLayout even_layout = null;
@@ -35,12 +37,14 @@ public class QueryRankingFragment extends Fragment {
 
 		return view;
 	}
-
+	
+	
 	@Override
-	public void onCreate(Bundle savedInstanceState) {
+	public void onActivityCreated(Bundle savedInstanceState) {
+		super.onActivityCreated(savedInstanceState);
 		AsyncTaskRunner.execute(new Task(), new UiUpdateListener());
 	}
-	
+
 	private class Task implements AsyncTaskRunner.Task{
 		@Override
 		public Object run() {
@@ -51,6 +55,9 @@ public class QueryRankingFragment extends Fragment {
 	private class UiUpdateListener implements AsyncTaskRunner.OnFinishUiUpdateListener {
 		@Override
 		public void onFinish(Object result) {
+			
+			if( ! (result instanceof List<?>) ) return;
+			
 			List<String> result_list = (List<String>)result;
 			int result_size = result_list.size();
 			int view_size = itemViews.size();

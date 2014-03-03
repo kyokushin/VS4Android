@@ -40,7 +40,6 @@ public class KeyWardRankingXMLParser {
 			XmlPullParser parser = Xml.newPullParser();
 			parser.setInput(connection.getInputStream(), "UTF-8");
 			
-			
 			boolean inItem = false;
 			boolean inTitle = false;
 

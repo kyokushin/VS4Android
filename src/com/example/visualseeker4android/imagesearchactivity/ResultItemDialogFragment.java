@@ -4,12 +4,12 @@ import java.io.File;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.app.DialogFragment;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.v4.app.DialogFragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
@@ -65,8 +65,7 @@ public class ResultItemDialogFragment extends DialogFragment {
 			@Override
 			public void onClick(DialogInterface dialog, int which) {
 				SearchResultFragment fragment = (SearchResultFragment) getActivity()
-						.getFragmentManager().findFragmentById(
-								R.id.search_result);
+						.getSupportFragmentManager().findFragmentByTag(SearchResultFragment.FRAGMENT_TAG);
 				fragment.searchAndUpdateUi(index);
 			}
 		});
